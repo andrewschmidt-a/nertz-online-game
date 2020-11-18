@@ -87,8 +87,8 @@
 				var run_ai = true
 				var calc_score = function(){
 					run_ai = false
-					jake_score = 52-jake_hand.length+jake_deck.length+jake_discard.length+jake_stack.length*2+jake_piles.reduce((pile, total) => pile.length+total)
-					you_score = 52-hand.length+deck.length+discard.length+stack.length*2+piles.reduce((pile, total) => pile.length+total)
+					jake_score = 52-jake_hand.length-jake_deck.length-jake_discard.length-jake_stack.length*2-jake_piles.map(p=> p.length).reduce((t, total) => total+t)
+					you_score = 52-hand.length-deck.length-discard.length-stack.length*2-piles.map(p=> p.length).reduce((t, total) => total+t)
 					if(you_score > jake_score){
 						alert('You won! Way to go! '+you_score+'-'+jake_score)
 					}else if(jake_score > you_score){
@@ -185,22 +185,29 @@
 					setTimeout(function(){ jake_loop() }, 1500);
 				}
 				var jake_loop = function(){
+					action = 1 // per turn
 					jake_piles.forEach(pile => {
-						if(_playCard(pile.topCard(), jake_piles, jake_stack)){
+						if(action > 0 && _playCard(pile.topCard(), jake_piles, jake_stack)){
+							action--;
 							if(pile.length == 0){
 								pile.addCard(jake_stack.topCard())
 								pile.render()
 
-								if(stack.length == 0){
+								if(jake_stack.length == 0){
 									calc_score()
 								}
 							}
 						}
 					})
-					if(jake_hand.length > 0 ){
-						_playCard(jake_hand.topCard(), jake_piles, jake_stack)
+					if(action > 0 && jake_hand.length > 0 ){
+						if(_playCard(jake_hand.topCard(), jake_piles, jake_stack)){
+							action--;
+						}
 					}
-					dealDeck(jake_deck, jake_discard, jake_hand)
+					if(action > 0){
+						dealDeck(jake_deck, jake_discard, jake_hand)
+					}
+					
 					if(run_ai){
 						schedule_turn()
 					}
