@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>cards.js - Write card games in Javascript.</title>
+		<style>
+			html { background-color:#092E20; }
+			body { 
+				position:relative;
+				border-radius:8px; 
+				box-shadow:black 0px 0px 2px; 
+				width: 600px; 
+				background:#FFF; 
+				margin:20px auto; 
+				border:solid 1px black; 
+				font-family: arial, sans-serif; 
+				padding:50px;  
+			}
+			#buttons {
+				text-align:center;
+			}
+			
+			a img {
+				position: absolute; 
+				top: 0; 
+				right: 0; 
+				border: 0;			
+			}
+			button {
+				height:30px;
+				width:100px;
+				margin:8px auto;
+			}
+			img.preload {
+				display:none;
+			}
+			h1 {
+				font-size:60px;
+				text-align:center;
+				padding:0px;
+				margin:0px;
+			}
+			code {
+				background-color:#F9FCA2;
+				border:dotted 1px black;
+				width:590px;
+				margin:auto;
+				display:block;
+				height:150px;
+				white-space:pre;
+				padding:7px;
+				display:none;
+			}
+			
+			#card-table {
+				background-color:green;
+				height:400px;
+				width:600px;
+				border:solid 6px brown;
+				border-radius:8px;
+				-webkit-border-radius:8px;
+				-moz-border-radius:8px;
+				-ms-border-radius:8px;
+				-o-border-radius:8px;
+				box-shadow:#111 1px 1px 2px;
+			}
+			a:visited {color:blue;}
+			
+			footer {
+				font-size : 12px;
+				color:grey;
+				margin:10px;
+			}
+			
+			footer a, footer a:visited{
+				color:grey;
+			}
+			
+			footer a:hover {
+				color:black;
+			}
+		</style>
+		<script src="jquery-1.7.min.js"></script>
+		<script src="deckType.js"></script>
+		<script src="cards.js"></script>
+		<script>
+			$(function() {
+				var run_ai = true
+				var calc_score = function(){
+					run_ai = false
+					jake_score = 52-jake_hand.length+jake_deck.length+jake_discard.length+jake_stack.length*2+jake_piles.reduce((pile, total) => pile.length+total)
+					you_score = 52-hand.length+deck.length+discard.length+stack.length*2+piles.reduce((pile, total) => pile.length+total)
+					if(you_score > jake_score){
+						alert('You won! Way to go! '+you_score+'-'+jake_score)
+					}else if(jake_score > you_score){
+						alert('Jake won. '+you_score+'-'+jake_score)
+					}else{
+						alert('You tied! '+you_score+'-'+jake_score)
+					}
+				}
+
+				var _playCard = function(card, piles, stack){
+					// Check if playable in center
+					if(card.rank == 1){
+						empty_slots = middle_piles.filter(pile => pile.length == 0)
+						empty_slots[0].addCard(card)
+						empty_slots[0].render()
+						return true
+					}
+					var filtered_middle_piles = middle_piles.filter(pile => pile.length > 0 && pile.topCard().suit == card.suit && pile.topCard().rank == card.rank-1)
+					if(filtered_middle_piles.length>0){
+						filtered_middle_piles[0].addCard(card)
+						filtered_middle_piles[0].render()
+						return true
+					}
+					mapping = {
+						'c': ['h', 'd'],
+						's': ['h', 'd'],
+						'h': ['c', 's'],
+						'd': ['c', 's']
+					}
+					var filtered_piles = piles.filter(pile => mapping[pile.topCard().suit].includes(card.suit) && pile.topCard().rank == card.rank+1)
+					
+					if(filtered_piles.length>0){
+						filtered_piles[0].addCard(card)
+						filtered_piles[0].render()
+						return true
+					}
+					return false
+				}
+
+				var playCard = function(card){
+					if(!_playCard(card, piles, stack)){
+						alert("Can not play card "+card.shortName)
+					}
+				}
+				var dealDeck = function(deck, discard=null, hand=null, cb=function(){}){
+					console.log(hand)
+					while(hand.length > 0){
+						discard.addCard(hand.topCard())
+					}
+					discard.render()
+					deck.deal((deck.length > 2)?3:deck.length, [hand], 50, function(){
+						console.log(deck)
+
+						if(deck.length == 0){
+							console.log("TEST")
+							while(discard.length > 0){
+								var card = discard.pop()
+								deck.addCard(card)
+							}
+							deck.render();
+						}
+						cb()
+					} )
+				}
+				cards.init({table:'#card-table'});
+
+				// User Initalization 
+				//Start by initalizing the library
+				// //Create a new deck of cards
+				deck = new cards.Deck({y:350, x:45}); 
+
+				discard = new cards.Deck({y:350, x:120}); 
+				piles = [new cards.Deck({faceUp:true, y:350, x: 200}), new cards.Deck({faceUp:true, y:350, x: 275}), new cards.Deck({faceUp:true, y:350, x: 350}),new cards.Deck({faceUp:true, y:350, x: 425})]
+				stack = new cards.Deck({faceUp:false, y:350, x: 560})
+				hand = new cards.Hand({faceUp: true, y:250, x: 55})
+				hand.click(function(card){
+					if(card == hand.topCard()){
+						playCard(card)
+					}
+				})
+
+				// Computer Initialization
+				jake_deck = new cards.Deck({y:55, x:45}); 
+
+				jake_discard = new cards.Deck({y:55, x:120}); 
+				jake_piles = [new cards.Deck({faceUp:true, y:50, x: 200}), new cards.Deck({faceUp:true, y:50, x: 275}), new cards.Deck({faceUp:true, y:50, x: 350}),new cards.Deck({faceUp:true, y:50, x: 425})]
+				jake_stack = new cards.Deck({faceUp:false, y:50, x: 560})
+				jake_hand = new cards.Hand({faceUp: true, y:155, x: 55})
+				jake_started = false 
+
+
+				//Computer AI
+				var schedule_turn = function(){
+					setTimeout(function(){ jake_loop() }, 1500);
+				}
+				var jake_loop = function(){
+					jake_piles.forEach(pile => {
+						if(_playCard(pile.topCard(), jake_piles, jake_stack)){
+							if(pile.length == 0){
+								pile.addCard(jake_stack.topCard())
+								pile.render()
+
+								if(stack.length == 0){
+									calc_score()
+								}
+							}
+						}
+					})
+					if(jake_hand.length > 0 ){
+						_playCard(jake_hand.topCard(), jake_piles, jake_stack)
+					}
+					dealDeck(jake_deck, jake_discard, jake_hand)
+					if(run_ai){
+						schedule_turn()
+					}
+					
+					
+				}
+
+
+
+				hand.click(function(card){
+					if(card == hand.topCard()){
+						playCard(card)
+					}
+				})
+
+				piles.forEach(pile => {
+					pile.click(function(card){
+						playCard(card)
+						if(pile.length == 0){
+							pile.addCard(stack.topCard())
+							pile.render()
+							if(stack.length == 0){
+								calc_score()
+							}
+						}
+					})
+				});
+
+				middle_piles = []
+				for(i=0; i<8; i++){
+					row = Math.floor(i/4)
+					col = i%4
+					let pile = new cards.Deck({faceUp:true,y:150+row*100, x:260+75*col});
+					middle_piles.push(pile)
+				}
+
+				// //cards.all contains all cards, put them all in the deck
+				deck.addCards([...cards.all]); 
+				// //No animation here, just get the deck onto the table.
+				deck.render({immediate:true});
+				deck.deal(1, piles, 50)
+				deck.deal(10, [stack], 50)
+				// deck.deal(1, middle_piles, 50)
+
+
+				// //cards.all contains all cards, put them all in the deck
+				jake_deck.addCards(cards.all2); 
+				// //No animation here, just get the deck onto the table.
+				jake_deck.render({immediate:true});
+				jake_deck.deal(1, jake_piles, 50)
+				jake_deck.deal(10, [jake_stack], 50)
+				// deck.deal(1, middle_piles, 50)
+				
+
+				deck.click(function(card){
+					if(!jake_started){
+						jake_started = true
+						jake_loop()
+					}
+					dealDeck(deck, discard, hand) 
+					
+				});
+			});
+		</script>
+	</head>
+	<body>
+		<h1>Nertz</h1>
+		<div id="card-table">
+		</div>
+	</body>
+</html>
