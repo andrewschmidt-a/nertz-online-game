@@ -182,10 +182,10 @@
 
 				//Computer AI
 				var schedule_turn = function(){
-					setTimeout(function(){ jake_loop() }, 1500);
+					setTimeout(function(){ jake_loop() }, 2000);
 				}
 				var jake_loop = function(){
-					action = 1 // per turn
+					action = 2 // per turn
 					jake_piles.forEach(pile => {
 						if(action > 0 && _playCard(pile.topCard(), jake_piles, jake_stack)){
 							action--;
