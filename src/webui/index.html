@@ -188,7 +188,7 @@
 				var jake_loop = function(){
 					action = 2 // per turn
 					jake_piles.forEach(pile => {
-						if(action > 0 && LAST_JAKE_CARD_PLAYED != pile.topCard().shortName && _playCard(pile.topCard(), jake_piles, jake_stack)){
+						if(action > 0 && (pile.topCard() && pile.topCard().shortName) && _playCard(pile.topCard(), jake_piles, jake_stack)){
 							LAST_JAKE_CARD_PLAYED = pile.topCard().shortName
 							action--;
 							if(pile.length == 0){
